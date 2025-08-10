@@ -12,8 +12,11 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 
 
+
+
 """
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
 """
 
 
