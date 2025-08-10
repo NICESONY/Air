@@ -1,3 +1,6 @@
 /ws/build/
 /ws/install/
 /ws/log/
+/ros2server/log/
+/ros2server/build/
+/ros2server/install/

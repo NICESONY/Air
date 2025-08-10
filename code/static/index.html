@@ -144,7 +144,7 @@
   const TH = { lpg: 10, co: 30, smoke: 20 };
   const el = id => document.getElementById(id);
 
-  // ✅ 1) 초기 1회는 REST로 채우기(페이지 켜자마자 값 보이게)
+  // 초기 1회 REST
   async function updateSensorOnce() {
     try {
       const res = await fetch('/sensor');
@@ -154,29 +154,27 @@
   }
   updateSensorOnce();
 
-  // ✅ 2) WebSocket으로 실시간 갱신
+  // WebSocket (브릿지: 8765 '/')
+  const WS_HOST = location.hostname;            // 브릿지가 다른 머신이면 '192.168.xx.yy'로 직접 지정
   const WS_PORT = 8765;
-  const WS_PATH = '/';         // ← 브릿지 파라미터(ws_path)에 맞추세요. /ws 쓰면 '/ws'
-  const WS_URL  = (location.protocol === 'https:' ? 'wss://' : 'ws://')
-                  + location.hostname + ':' + WS_PORT + WS_PATH;
+  const WS_URL  = (location.protocol === 'https:' ? 'wss://' : 'ws://') + WS_HOST + ':' + WS_PORT + '/';
 
+  let ws;
   function connectWS() {
-    const ws = new WebSocket(WS_URL);
-
+    ws = new WebSocket(WS_URL);
     ws.onopen = () => console.log('WS connected:', WS_URL);
     ws.onmessage = (e) => {
-      try { applyData(JSON.parse(e.data)); }
-      catch (err) { console.error('parse error', err); }
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg && msg.type === 'sensor') applyData(msg);  // 센서만 UI 반영
+      } catch (err) { console.error('parse error', err); }
     };
-    ws.onclose = () => {
-      console.log('WS closed. retry in 2s');
-      setTimeout(connectWS, 2000); // 자동 재접속
-    };
+    ws.onclose = () => setTimeout(connectWS, 1500);
     ws.onerror = (err) => console.warn('WS error', err);
   }
   connectWS();
 
-  // 화면 갱신 공통 함수
+  // 화면 갱신
   function applyData(d) {
     if (!d) return;
     el('lpg').textContent   = `${d.lpg} ppm`;
@@ -189,16 +187,24 @@
     document.getElementById('alarm').style.display = warn ? 'block' : 'none';
   }
 
-  // (선택) 5~10초마다 REST로 보정 체크하고 싶으면 유지:
-  // setInterval(updateSensorOnce, 10000);
+  // 버튼 → WS 브로드캐스트 (+ 기존 REST 호출은 유지하고 싶으면 그대로 두기)
+  function sendVent(val){
+    const payload = { type: 'vent', value: val, at: Date.now(), by: 'ui' };
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+    } else {
+      console.warn('WS not ready');
+    }
+  }
 
-  // 버튼 액션은 그대로 유지
-  document.getElementById('vent-start-btn').onclick = () =>
-    fetch('/ventilate', { method: 'POST' }).then(r => { if (!r.ok) alert('환기 시작 실패'); });
+  document.getElementById('vent-start-btn').onclick = async () => {
+    sendVent(1);
+    // (옵션) 기존 REST 호출 유지
+    try { const r = await fetch('/ventilate', { method: 'POST' }); if (!r.ok) alert('환기 시작 실패'); } catch {}
+  };
 
-  document.getElementById('vent-stop-btn').onclick = () =>
-    fetch('/ventilate/stop', { method: 'POST' }).then(r => { if (!r.ok) alert('환기 종료 실패'); });
-
-
-
+  document.getElementById('vent-stop-btn').onclick = async () => {
+    sendVent(0);
+    try { const r = await fetch('/ventilate/stop', { method: 'POST' }); if (!r.ok) alert('환기 종료 실패'); } catch {}
+  };
 </script>
