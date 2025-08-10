@@ -1,5 +1,5 @@
 
-## 실행 (그대로 OK)
+## 실행
 
 ```bash
 # 1) Arduino→Serial→ROS2 퍼블리셔
