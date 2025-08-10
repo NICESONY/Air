@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>간소화된 센서 모니터링</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 2rem;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7fc;
+      color: #444;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      margin-bottom: 1.5rem;
+      color: #222;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+      padding: 1.8rem;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.7rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.7rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s, transform 0.1s;
+      color: #fff;
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+    }
+
+    .start {
+      background: #4caf50;
+    }
+
+    .start:hover {
+      background: #43a047;
+    }
+
+    .stop {
+      background: #f44336;
+    }
+
+    .stop:hover {
+      background: #e53935;
+    }
+
+    .sensor-list {
+      list-style: none;
+      padding: 0;
+      margin: 1rem 0;
+    }
+
+    .sensor-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eceff4;
+      font-size: 1.05rem;
+    }
+
+    .sensor-list li:last-child {
+      border-bottom: none;
+    }
+
+    #alarm {
+      display: none;
+      background: #ff5252;
+      padding: 0.9rem;
+      border-radius: 6px;
+      color: white;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    #current p {
+      font-size: 1.05rem;
+      margin: 0.5rem 0;
+    }
+
+    #current span {
+      font-weight: 600;
+    }
+
+    #status {
+      font-size: 0.9rem;
+      color: #777;
+      min-height: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>실시간 센서 모니터링</h1>
+
+  <div class="btn-group">
+    <button id="vent-start-btn" class="btn start">환기 시작</button>
+    <button id="vent-stop-btn" class="btn stop">환기 종료</button>
+  </div>
+
+  <div id="alarm">⚠️ 환기가 필요합니다!</div>
+
+  <div class="card">
+    <ul class="sensor-list">
+      <li>LPG <span id="lpg">-- ppm</span></li>
+      <li>CO <span id="co">-- ppm</span></li>
+      <li>SMOKE <span id="smoke">-- ppm</span></li>
+    </ul>
+    <div id="current">
+      <p>마지막 업데이트: <span id="time">--:--:--</span></p>
+    </div>
+  </div>
+
+  <script>
+    const TH = { lpg: 10, co: 30, smoke: 20 };
+    const el = id => document.getElementById(id);
+
+    async function updateSensor() {
+      try {
+        const res = await fetch('/sensor');
+        const d = await res.json();
+        el('lpg').textContent = `${d.lpg} ppm`;
+        el('co').textContent = `${d.co} ppm`;
+        el('smoke').textContent = `${d.smoke} ppm`;
+        el('time').textContent = new Date(d.timestamp * 1000).toLocaleTimeString('ko-KR');
+        el('alarm').style.display = (d.lpg > TH.lpg || d.co > TH.co || d.smoke > TH.smoke) ? 'block' : 'none';
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    setInterval(updateSensor, 1000);
+
+    el('vent-start-btn').onclick = () =>
+      fetch('/ventilate', { method: 'POST' }).then(r => {
+        if (!r.ok) alert('환기 시작 실패');
+      });
+
+    el('vent-stop-btn').onclick = () =>
+      fetch('/ventilate/stop', { method: 'POST' }).then(r => {
+        if (!r.ok) alert('환기 종료 실패');
+      });
+  </script>
+</body>
+</html>
