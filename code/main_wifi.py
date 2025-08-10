@@ -12,6 +12,34 @@ from pydantic import BaseModel
 uvicorn main_wifi:app --reload --host 0.0.0.0 --port 8000
 '''
 
+
+'''
+
+[아두이노] --(USB 시리얼)--> [SerialPublisher 노드]
+   └─ /gas_sensor 토픽(PubAirSensor) 으로 publish
+
+[WebBridge 노드]
+   └─ /gas_sensor 동일 타입으로 subscribe
+   └─ 받은 값을 JSON으로 변환해서 WebSocket 서버(예: ws://<IP>:8765/<path>)로 브로드캐스트
+      ※ 여기서 쓰는 건 "websockets" 파이썬 라이브러리입니다. (websocat 툴 아님)
+
+[FastAPI main.py]
+   └─ 정적 HTML 서빙(/)
+   └─ HTML/JS가 WebSocket으로 WebBridge에 직접 접속해서 실시간 표시
+
+
+   
+--------- logic flow ---------
+
+SerialPublisher가 /gas_sensor로 메시지 발행
+
+WebBridge가 구독해서 JSON으로 변환
+
+WebBridge 안의 웹소켓 서버가 연결된 브라우저들에 JSON을 보내줌
+
+HTML/JS가 그 JSON을 받아 DOM 업데이트
+'''
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("web_fastapi")
 
