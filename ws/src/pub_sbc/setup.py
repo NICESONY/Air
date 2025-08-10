@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+                    'button2message = pub_sbc.button2message:main',
         ],
     },
 )

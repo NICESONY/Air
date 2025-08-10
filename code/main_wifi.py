@@ -1,11 +1,14 @@
 # main.py — FastAPI server (no ROS import)
 import logging
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Set
 
 import pymysql
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+import json
+
 
 
 '''
@@ -25,6 +28,8 @@ uvicorn main_wifi:app --reload --host 0.0.0.0 --port 8000
 
 [FastAPI main.py]
    └─ 정적 HTML 서빙(/)
+
+
    └─ HTML/JS가 WebSocket으로 WebBridge에 직접 접속해서 실시간 표시
 
 
@@ -45,7 +50,6 @@ log = logging.getLogger("web_fastapi")
 
 app = FastAPI()
 
-# ===================== WebSocket =====================
 
 from pydantic import BaseModel
 
@@ -145,6 +149,44 @@ async def get_history(limit: int = 100):
             (limit,),
         )
         return cur.fetchall()
+
+
+
+
+
+
+# --- 추가: 상단 import 근처 --
+# 연결된 클라이언트 보관
+ws_clients: Set[WebSocket] = set()
+
+async def ws_broadcast_text(text: str):
+    dead = []
+    for c in list(ws_clients):
+        try:
+            await c.send_text(text)
+        except Exception:
+            dead.append(c)
+    for c in dead:
+        ws_clients.discard(c)
+
+async def ws_broadcast_json(obj):
+    await ws_broadcast_text(json.dumps(obj))
+
+# --- 추가: WebSocket 엔드포인트 ---
+@app.websocket("/ws")
+async def ws_endpoint(ws: WebSocket):
+    await ws.accept()
+    ws_clients.add(ws)
+    try:
+        while True:
+            msg = await ws.receive_text()
+            # 브라우저/ROS 등 어떤 클라이언트가 보낸 메시지든 전체에 팬아웃
+            await ws_broadcast_text(msg)
+    except WebSocketDisconnect:
+        ws_clients.discard(ws)
+
+
+
 
 # ============= 정적 파일 =============
 # code/static/index.html 를 / 로 서빙

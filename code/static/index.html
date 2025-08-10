@@ -198,4 +198,7 @@
 
   document.getElementById('vent-stop-btn').onclick = () =>
     fetch('/ventilate/stop', { method: 'POST' }).then(r => { if (!r.ok) alert('환기 종료 실패'); });
+
+
+
 </script>
