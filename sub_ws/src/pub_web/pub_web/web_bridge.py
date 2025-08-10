@@ -9,6 +9,8 @@ from msgs.msg import PubAirSensor
 
 import websockets
 
+# 상단 임포트에 추가
+import requests  # ← 추가
 
 
 
@@ -35,18 +37,22 @@ class WebBridge(Node):
     # NOTE: Node에 'clients' 프로퍼티가 있으므로 충돌 피하려고 'ws_clients' 사용
     __slots__ = (
         'topic', 'ws_host', 'ws_port', 'ws_path',
-        'sub', 'ws_clients', 'loop', 'loop_thread', 'ws_server'
+        'sub', 'ws_clients', 'loop', 'loop_thread', 'ws_server' , 'server_url',
     )
 
     def __init__(self):
         super().__init__('ros_web_bridge')
 
         # params
+        self.declare_parameter('server_url', 'http://127.0.0.1:8000/ingest')   # ← 추가
+        
         self.declare_parameter('topic', '/gas_sensor')
         self.declare_parameter('ws_host', '0.0.0.0')
         self.declare_parameter('ws_port', 8765)
         self.declare_parameter('ws_path', '/')
 
+
+        self.server_url = self.get_parameter('server_url').value  # ← 추가 
         self.topic   = self.get_parameter('topic').value
         self.ws_host = self.get_parameter('ws_host').value
         self.ws_port = int(self.get_parameter('ws_port').value)
@@ -125,8 +131,16 @@ class WebBridge(Node):
         }
         # 디버깅 원하면 주석 해제
         # self.get_logger().info(f"RX {data}")
+        # 1) 웹소켓 브로드캐스트(기존)
         asyncio.run_coroutine_threadsafe(self._broadcast(json.dumps(data)), self.loop)
 
+        # 2) FastAPI 서버로 POST (server_url이 설정된 경우만)
+        if self.server_url:
+            try:
+                # 타임아웃은 짧게(네트워크 문제로 콜백이 지연되지 않게)
+                requests.post(self.server_url, json=data, timeout=0.5)
+            except Exception as e:
+                self.get_logger().warn(f"/ingest POST failed: {e}")
     # ============ shutdown ============
     async def _shutdown_ws(self):
         try:

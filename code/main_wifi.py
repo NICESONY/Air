@@ -45,6 +45,31 @@ log = logging.getLogger("web_fastapi")
 
 app = FastAPI()
 
+# ===================== WebSocket =====================
+
+from pydantic import BaseModel
+
+class IngestPayload(BaseModel):
+    lpg: int
+    co: int
+    smoke: int
+    raw: str
+    timestamp: float
+
+
+@app.post("/ingest")
+async def ingest(p: IngestPayload):
+    conn = get_conn()
+    with conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO sensor (lpg, co, smoke, raw, timestamp) VALUES (%s,%s,%s,%s,%s)",
+            (p.lpg, p.co, p.smoke, p.raw, p.timestamp)
+        )
+    # 최신 캐시도 갱신(옵션)
+    latest_reading.update(p.dict())
+    return {"ok": True}
+
+
 # ===================== DB =====================
 DB_CFG = dict(
     host="127.0.0.1",
