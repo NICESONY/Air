@@ -11,7 +11,7 @@ ros2 run py_pubsub pub_sensor_data
 
 ```bash
 # 2) local computer(ROS2→WebSocket 브릿지) + websocat server live broadcasting
-cd ~/web_fastapi/sub_ws
+cd ~/web_fastapi/ws
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ros2 run pub_web web_bridge --ros-args -p ws_path:=/
