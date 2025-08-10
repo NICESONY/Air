@@ -13,7 +13,7 @@ from rclpy.node import Node
 from rclpy.executors import SingleThreadedExecutor
 
 # ★ 실제 생성된 메시지 타입으로 바꾸세요:
-from msgs.msg import PubAirSensor  # ← 당신 워크스페이스가 이 이름이면 이걸로
+from msgs.msg import PubAirSensor  
 
 
 logging.basicConfig(level=logging.INFO)
