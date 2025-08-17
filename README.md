@@ -32,7 +32,7 @@ ros2 run py_pubsub sub_button_data
 
 
 ```bash
-# 5) button message subscriber
+# 5) web server button -> message
 cd ~/web_fastapi/ws
 ros2 run pub_sbc button2message
 ```
