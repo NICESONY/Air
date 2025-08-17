@@ -24,6 +24,13 @@ uvicorn main_wifi:app --reload --host 0.0.0.0 --port 8000
 # (⚠️ 파일명이 main_wifi.py가 맞는지 확인. 파일이 main.py면 main:app 로)
 ```
 
+```bash
+# 4) button message subscriber
+cd ~/ros2server
+ros2 run py_pubsub sub_button_data 
+```
+
+
 ## 디버깅 (좋음 + 몇 개 추가)
 
 ```bash
