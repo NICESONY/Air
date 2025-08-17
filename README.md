@@ -31,6 +31,15 @@ ros2 run py_pubsub sub_button_data
 ```
 
 
+```bash
+# 5) button message subscriber
+cd ~/web_fastapi/ws
+ros2 run pub_sbc button2message
+```
+
+
+### After creating the launch file that includes files #2 and #5, run it.
+
 ## 디버깅 (좋음 + 몇 개 추가)
 
 ```bash

@@ -5,6 +5,21 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Int32
 
+
+
+
+'''
+
+# 1 보내기 → 아두이노는 "VENT_START"를 받음
+ros2 topic pub -1 /vent_cmd std_msgs/Int32 "data: 1"
+
+# 0 보내기 → "VENT_STOP"
+ros2 topic pub -1 /vent_cmd std_msgs/Int32 "data: 0"
+
+
+'''
+
+
 class VentCmdToSerial(Node):
     def __init__(self):
         super().__init__('vent_cmd_to_serial')
